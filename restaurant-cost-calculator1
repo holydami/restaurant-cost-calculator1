@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>레스토랑 원가 계산기</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    input, select { padding: 5px; margin: 4px 0; width: 100%; }
+    .button { margin-top: 10px; padding: 10px 15px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+    .button:hover { background-color: #45a049; }
+    .result { margin-top: 20px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>🍽 레스토랑 원가 기반 판매가 계산기</h2>
+
+  <div>
+    <h3>재료 추가</h3>
+    <input type="text" id="ingredientName" placeholder="재료명">
+    <input type="number" id="unitCost" placeholder="단가">
+    <select id="unitType">
+      <option value="100g">100g당</option>
+      <option value="1kg">1kg당</option>
+      <option value="개당">개당</option>
+      <option value="마리당">마리당</option>
+    </select>
+    <input type="number" id="amountUsed" placeholder="사용량 (g, 개, 마리 등)">
+    <button class="button" onclick="addIngredient()">➕ 추가</button>
+  </div>
+
+  <table id="ingredientTable">
+    <thead>
+      <tr><th>재료명</th><th>단가</th><th>단위</th><th>사용량</th><th>원가</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div>
+    <h3>추가 비용 및 마진</h3>
+    <input type="number" id="overhead" placeholder="간접비 (금액)">
+    <input type="number" id="profitMargin" placeholder="이윤율 (%)">
+    <button class="button" onclick="calculatePrice()">💰 최종 판매가 계산</button>
+  </div>
+
+  <div class="result" id="result"></div>
+
+  <script>
+    const ingredients = [];
+
+    function convertTo100g(unitType, unitCost) {
+      switch(unitType) {
+        case '100g': return unitCost;
+        case '1kg': return unitCost / 10;
+        case '개당': return unitCost;
+        case '마리당': return unitCost;
+        default: return unitCost;
+      }
+    }
+
+    function addIngredient() {
+      const name = document.getElementById('ingredientName').value;
+      const unitCost = parseFloat(document.getElementById('unitCost').value);
+      const unitType = document.getElementById('unitType').value;
+      const amountUsed = parseFloat(document.getElementById('amountUsed').value);
+
+      if (!name || isNaN(unitCost) || isNaN(amountUsed)) return;
+
+      const adjustedUnitCost = convertTo100g(unitType, unitCost);
+      const cost = (unitType === '100g' || unitType === '1kg') 
+                   ? adjustedUnitCost * amountUsed / 100 
+                   : adjustedUnitCost * amountUsed;
+
+      ingredients.push({ name, unitCost, unitType, amountUsed, cost });
+
+      const table = document.querySelector('#ingredientTable tbody');
+      const row = table.insertRow();
+      row.innerHTML = `<td>${name}</td><td>${unitCost}</td><td>${unitType}</td><td>${amountUsed}</td><td>${cost.toFixed(2)}</td>`;
+
+      document.getElementById('ingredientName').value = '';
+      document.getElementById('unitCost').value = '';
+      document.getElementById('amountUsed').value = '';
+    }
+
+    function calculatePrice() {
+      const overhead = parseFloat(document.getElementById('overhead').value) || 0;
+      const profitMargin = parseFloat(document.getElementById('profitMargin').value) || 0;
+
+      const totalCost = ingredients.reduce((sum, item) => sum + item.cost, 0);
+      const finalPrice = (totalCost + overhead) / (1 - profitMargin / 100);
+
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = `
+        📦 총 원가: ${totalCost.toFixed(2)}원<br>
+        🧾 간접비: ${overhead.toFixed(2)}원<br>
+        📈 이윤율: ${profitMargin}%<br>
+        💵 최종 판매가: <strong>${finalPrice.toFixed(0)}원</strong>
+      `;
+    }
+  </script>
+</body>
+</html>
